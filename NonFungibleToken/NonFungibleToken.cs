@@ -36,6 +36,15 @@ public class NonFungibleToken : SmartContract
         public bool Approved;
     }
 
+    public struct OwnershipTransferedLog
+    {
+        [Index]
+        public Address PreviousOwner;
+
+        [Index]
+        public Address NewOwner;
+    }
+
     /// <summary>
     /// Get a value indicacting if the interface is supported.
     /// </summary>
@@ -159,6 +168,15 @@ public class NonFungibleToken : SmartContract
     }
 
     /// <summary>
+    /// Owner of the contract is responsible to for minting/burning 
+    /// </summary>
+    public Address Owner
+    {
+        get => this.PersistentState.GetAddress(nameof(Owner));
+        set => this.PersistentState.SetAddress(nameof(Owner), value);
+    }
+
+    /// <summary>
     /// Constructor. Initializes the supported interfaces.
     /// </summary>
     /// <param name="state">The smart contract state.</param>
@@ -168,6 +186,8 @@ public class NonFungibleToken : SmartContract
         this.SetSupportedInterfaces((uint)0x00000001, true); // (ERC165) - ISupportsInterface
         this.SetSupportedInterfaces((uint)0x00000002, true); // (ERC721) - INonFungibleToken,
         this.SetSupportedInterfaces((uint)0x00000003, false); // (ERC721) - INonFungibleTokenReceiver
+
+        this.Owner = Message.Sender;
     }
 
     /// <summary>
@@ -468,5 +488,20 @@ public class NonFungibleToken : SmartContract
     private void ValidNFToken(ulong tokenId)
     {
         Assert(GetIdToOwner(tokenId) != Address.Zero);
+    }
+
+    public void TransferOwnership(Address owner)
+    {
+        EnsureOwnerOnly();
+        Assert(owner == Address.Zero, "Can not transer ownership to default(zero) address.");
+        
+        Log(new OwnershipTransferedLog { PreviousOwner = this.Owner, NewOwner = owner });
+
+        this.Owner = owner;
+    }
+
+    private void EnsureOwnerOnly()
+    {
+        Assert(Message.Sender == Owner, "Only owner of the contract can set new owner.");
     }
 }
