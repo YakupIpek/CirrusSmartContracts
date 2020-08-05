@@ -14,6 +14,9 @@ public class NonFungibleTokenTests
     private InMemoryState persistentState;
     private Mock<IInternalTransactionExecutor> internalTransactionExecutorMock;
     private Address contractAddress;
+    private string name;
+    private string symbol;
+
     public NonFungibleTokenTests()
     {
         this.contractLoggerMock = new Mock<IContractLogger>();
@@ -24,7 +27,8 @@ public class NonFungibleTokenTests
         this.smartContractStateMock.Setup(s => s.ContractLogger).Returns(this.contractLoggerMock.Object);
         this.smartContractStateMock.Setup(x => x.InternalTransactionExecutor).Returns(this.internalTransactionExecutorMock.Object);
         this.contractAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
-
+        this.name = "Non-Fungible Token";
+        this.symbol = "NFT";
     }
 
     [Fact]
@@ -38,7 +42,11 @@ public class NonFungibleTokenTests
         Assert.True(this.persistentState.GetBool("SupportedInterface:1"));
         Assert.True(this.persistentState.GetBool("SupportedInterface:2"));
         Assert.False(this.persistentState.GetBool("SupportedInterface:3"));
-        Assert.Equal(owner, this.persistentState.GetAddress("Owner"));
+        Assert.True(this.persistentState.GetBool("SupportedInterface:4"));
+
+        Assert.Equal(this.name, nonFungibleToken.Name);
+        Assert.Equal(this.symbol, nonFungibleToken.Symbol);
+        Assert.Equal(owner, nonFungibleToken.Owner);
     }
 
     [Fact]

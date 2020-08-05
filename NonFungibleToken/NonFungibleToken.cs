@@ -173,20 +173,41 @@ public class NonFungibleToken : SmartContract
     public Address Owner
     {
         get => this.PersistentState.GetAddress(nameof(Owner));
-        set => this.PersistentState.SetAddress(nameof(Owner), value);
+        private set => this.PersistentState.SetAddress(nameof(Owner), value);
+    }
+
+    /// <summary>
+    /// Name for non-fungible token contract
+    /// </summary>
+    public string Name
+    {
+        get => this.PersistentState.GetString(nameof(Name));
+        private set => this.PersistentState.SetString(nameof(Name), value);
+    }
+
+    /// <summary>
+    /// Symbol for non-fungible token contract
+    /// </summary>
+    public string Symbol
+    {
+        get => this.PersistentState.GetString(nameof(Symbol));
+        private set => this.PersistentState.SetString(nameof(Symbol), value);
     }
 
     /// <summary>
     /// Constructor. Initializes the supported interfaces.
     /// </summary>
     /// <param name="state">The smart contract state.</param>
-    public NonFungibleToken(ISmartContractState state) : base(state)
+    public NonFungibleToken(ISmartContractState state,string name, string symbol) : base(state)
     {
         // todo: discuss callback handling and supported interface numbering with community.
         this.SetSupportedInterfaces((uint)0x00000001, true); // (ERC165) - ISupportsInterface
         this.SetSupportedInterfaces((uint)0x00000002, true); // (ERC721) - INonFungibleToken,
         this.SetSupportedInterfaces((uint)0x00000003, false); // (ERC721) - INonFungibleTokenReceiver
+        this.SetSupportedInterfaces((uint)0x00000004, true); // (ERC721) - INonFungibleTokenMetadata
 
+        this.Name = name;
+        this.Symbol = symbol;
         this.Owner = Message.Sender;
     }
 
