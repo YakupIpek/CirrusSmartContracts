@@ -50,6 +50,49 @@ public class NonFungibleTokenTests
     }
 
     [Fact]
+    public void TransferOwnership_CalledByNonContractOwner_ThrowsException()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        var newOwner = "0x0000000000000000000000000000000000000003".HexToAddress();
+        var someAddress = "0x0000000000000000000000000000000000000004".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, someAddress, 0));
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.TransferOwnership(newOwner));
+    }
+
+    [Fact]
+    public void TransferOwnership_CalledByZeroAddress_ThrowsException()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        var newOwner = "0x0000000000000000000000000000000000000003".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, Address.Zero, 0));
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.TransferOwnership(newOwner));
+    }
+
+    [Fact]
+    public void TransferOwnership_CalledByContractOwner_Success()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        var newOwner = "0x0000000000000000000000000000000000000003".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        nonFungibleToken.TransferOwnership(newOwner);
+
+        Assert.Equal(newOwner, nonFungibleToken.Owner);
+
+        this.contractLoggerMock.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new NonFungibleToken.OwnershipTransferedLog { PreviousOwner = owner, NewOwner = newOwner }));
+    }
+
+    [Fact]
     public void SupportsInterface_InterfaceSupported_ReturnsTrue()
     {
         var sender = "0x0000000000000000000000000000000000000002".HexToAddress();
@@ -84,7 +127,7 @@ public class NonFungibleTokenTests
 
         var nonFungibleToken = this.CreateNonFungibleToken();
 
-        var result = nonFungibleToken.SupportsInterface(4);
+        var result = nonFungibleToken.SupportsInterface(5);
 
         Assert.False(result);
     }
@@ -1085,6 +1128,6 @@ public class NonFungibleTokenTests
 
     private NonFungibleToken CreateNonFungibleToken()
     {
-        return new NonFungibleToken(this.smartContractStateMock.Object);
+        return new NonFungibleToken(this.smartContractStateMock.Object, this.name, this.symbol);
     }
 }

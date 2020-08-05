@@ -514,7 +514,7 @@ public class NonFungibleToken : SmartContract
     public void TransferOwnership(Address owner)
     {
         EnsureOwnerOnly();
-        Assert(owner == Address.Zero, "Can not transer ownership to default(zero) address.");
+        Assert(owner != Address.Zero, "Can not transer ownership to default(zero) address.");
         
         Log(new OwnershipTransferedLog { PreviousOwner = this.Owner, NewOwner = owner });
 
