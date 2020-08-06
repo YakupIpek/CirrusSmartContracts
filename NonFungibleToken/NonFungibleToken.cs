@@ -1,5 +1,8 @@
 ﻿using Stratis.SmartContracts;
 using System;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 /// <summary>
 /// A non fungible token contract.
@@ -198,7 +201,7 @@ public class NonFungibleToken : SmartContract
     /// Constructor. Initializes the supported interfaces.
     /// </summary>
     /// <param name="state">The smart contract state.</param>
-    public NonFungibleToken(ISmartContractState state,string name, string symbol) : base(state)
+    public NonFungibleToken(ISmartContractState state, string name, string symbol) : base(state)
     {
         // todo: discuss callback handling and supported interface numbering with community.
         this.SetSupportedInterfaces((uint)0x00000001, true); // (ERC165) - ISupportsInterface
@@ -511,11 +514,15 @@ public class NonFungibleToken : SmartContract
         Assert(GetIdToOwner(tokenId) != Address.Zero);
     }
 
+    /// <summary>
+    /// Sets the contract owner who can mint/bur
+    /// </summary>
+    /// <param name="owner"></param>
     public void TransferOwnership(Address owner)
     {
         EnsureOwnerOnly();
-        Assert(owner != Address.Zero, "Can not transer ownership to default(zero) address.");
-        
+        Assert(owner != Address.Zero, $"The {nameof(owner)} parameter can not be default(zero) address.");
+
         Log(new OwnershipTransferedLog { PreviousOwner = this.Owner, NewOwner = owner });
 
         this.Owner = owner;
@@ -524,5 +531,35 @@ public class NonFungibleToken : SmartContract
     private void EnsureOwnerOnly()
     {
         Assert(Message.Sender == Owner, "Only owner of the contract can set new owner.");
+    }
+
+    /// <summary>
+    /// Mints a new token
+    /// </summary>
+    /// <param name="to">o The address that will own the minted NFT</param>
+    /// <param name="tokenId">The token id</param>
+    public void Mint(Address to, ulong tokenId)
+    {
+        EnsureOwnerOnly();
+
+        Assert(to != Address.Zero, $"The {nameof(to)} parameter can not be default(zero) address.");
+        Assert(GetIdToOwner(tokenId) == Address.Zero, "The token is already exist.");
+
+        AddNFToken(to, tokenId);
+
+        Log(new TransferLog { From = Address.Zero, To = to, TokenId = tokenId });
+    }
+
+    public void Burn(ulong tokenId)
+    {
+        ValidNFToken(tokenId);
+        Address tokenOwner = GetIdToOwner(tokenId);
+
+        Assert(tokenOwner == Message.Sender, "Only token owner can burn the token.");
+
+        ClearApproval(tokenId);
+        RemoveNFToken(tokenOwner, tokenId);
+        
+        Log(new TransferLog { From = tokenOwner, To = Address.Zero, TokenId = tokenId });
     }
 }
