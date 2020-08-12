@@ -1,8 +1,5 @@
 ﻿using Stratis.SmartContracts;
 using System;
-using System.Net.NetworkInformation;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 /// <summary>
 /// A non fungible token contract.
@@ -197,6 +194,40 @@ public class NonFungibleToken : SmartContract
         private set => this.PersistentState.SetString(nameof(Symbol), value);
     }
 
+    private string GetTokenByIndexKey(ulong index) => $"TokenByIndex:{index}";
+
+    public ulong GetTokenByIndex(ulong index) => this.PersistentState.GetUInt64(GetTokenByIndexKey(index));
+
+    public void SetTokenByIndex(ulong index, ulong token) => this.PersistentState.SetUInt64(GetTokenByIndexKey(index), token);
+
+    private void ClearTokenByIndex(ulong index) => this.PersistentState.Clear(GetTokenByIndexKey(index));
+
+    private string GetIndexByTokenKey(ulong token) => $"IndexByToken:{token}";
+
+    private ulong GetIndexByToken(ulong token) => this.PersistentState.GetUInt64(GetIndexByTokenKey(token));
+
+    private void SetIndexByToken(ulong token, ulong index) => this.PersistentState.SetUInt64(GetIndexByTokenKey(token), index);
+
+    private void ClearIndexByToken(ulong token) => this.PersistentState.Clear(GetIndexByTokenKey(token));
+
+    private string GetTokenOfOwnerByIndexKey(Address address, ulong index) => $"TokenOfOwnerByIndex:{address}:{index}";
+
+    private ulong GetTokenOfOwnerByIndex(Address address, ulong index) => this.PersistentState.GetUInt64(GetTokenOfOwnerByIndexKey(address, index));
+
+    private void SetTokenOfOwnerByIndex(Address owner, ulong index, ulong tokenId) => this.PersistentState.SetUInt64(GetTokenOfOwnerByIndexKey(owner, index), tokenId);
+
+    private void ClearTokenOfOwnerByIndex(Address owner, ulong index) => this.PersistentState.Clear(GetTokenOfOwnerByIndexKey(owner, index));
+
+    private string IndexOfOwnerByTokenKey(Address owner, ulong tokenId) => $"IndexOfOwnerByToken:{owner}:{tokenId}";
+    private ulong GetIndexOfOwnerByToken(Address owner, ulong tokenId) => this.PersistentState.GetUInt64(IndexOfOwnerByTokenKey(owner, tokenId));
+    private void SetIndexOfOwnerByToken(Address owner, ulong tokenId, ulong index) => this.PersistentState.SetUInt64(IndexOfOwnerByTokenKey(owner, tokenId), index);
+    private void ClearIndexOfOwnerByToken(Address owner, ulong tokenId) => this.PersistentState.Clear(IndexOfOwnerByTokenKey(owner, tokenId), index);
+    public ulong TotalSupply
+    {
+        get => this.PersistentState.GetUInt64(nameof(TotalSupply));
+        private set => this.PersistentState.SetUInt64(nameof(TotalSupply), value);
+    }
+
     /// <summary>
     /// Constructor. Initializes the supported interfaces.
     /// </summary>
@@ -208,10 +239,26 @@ public class NonFungibleToken : SmartContract
         this.SetSupportedInterfaces((uint)0x00000002, true); // (ERC721) - INonFungibleToken,
         this.SetSupportedInterfaces((uint)0x00000003, false); // (ERC721) - INonFungibleTokenReceiver
         this.SetSupportedInterfaces((uint)0x00000004, true); // (ERC721) - INonFungibleTokenMetadata
+        this.SetSupportedInterfaces((uint)0x00000005, true); // ERC721Enumerable
 
         this.Name = name;
         this.Symbol = symbol;
         this.Owner = Message.Sender;
+    }
+
+    public ulong TokenByIndex(ulong index)
+    {
+        Assert(index < TotalSupply, "The token is not found.");
+        return GetTokenByIndex(index);
+    }
+
+    public ulong TokenOfOwnerByIndex(Address owner, ulong index)
+    {
+        var token = GetTokenOfOwnerByIndex(owner, index);
+
+        Assert(index < GetOwnerToNFTokenCount(owner), "The token is not found.");
+
+        return token;
     }
 
     /// <summary>
@@ -388,6 +435,19 @@ public class NonFungibleToken : SmartContract
         Assert(GetIdToOwner(tokenId) == from);
         SetOwnerToNFTokenCount(from, checked(GetOwnerToNFTokenCount(from) - 1));
         this.PersistentState.Clear(GetIdToOwnerKey(tokenId));
+
+        ulong index = GetIndexOfOwnerByToken(from, tokenId);
+        ulong lastIndex = checked(GetOwnerToNFTokenCount(from) - 1);
+
+        if (index != lastIndex)
+        {
+            ulong lastToken = GetTokenOfOwnerByIndex(from, lastIndex);
+            SetIndexOfOwnerByToken(from, lastToken, index);
+            SetTokenOfOwnerByIndex(from, index, lastToken);
+        }
+
+        ClearTokenOfOwnerByIndex(from, lastIndex);
+        ClearIndexOfOwnerByToken(from, tokenId);
     }
 
     /// <summary>
@@ -546,6 +606,12 @@ public class NonFungibleToken : SmartContract
         Assert(GetIdToOwner(tokenId) == Address.Zero, "The token is already exist.");
 
         AddNFToken(to, tokenId);
+        var index = TotalSupply;
+
+        SetTokenByIndex(index, tokenId);
+        SetIndexByToken(tokenId, index);
+
+        TotalSupply = checked(index + 1);
 
         Log(new TransferLog { From = Address.Zero, To = to, TokenId = tokenId });
     }
@@ -559,6 +625,16 @@ public class NonFungibleToken : SmartContract
 
         ClearApproval(tokenId);
         RemoveNFToken(tokenOwner, tokenId);
+
+        var index = GetIndexByToken(tokenId);
+        var lastTokenIndex = checked(--TotalSupply);
+        var lastToken = GetTokenByIndex(lastTokenIndex);
+
+        SetTokenByIndex(index, lastToken);
+        SetIndexByToken(lastToken, index);
+
+        ClearTokenByIndex(lastTokenIndex);
+        ClearIndexByToken(tokenId);
         
         Log(new TransferLog { From = tokenOwner, To = Address.Zero, TokenId = tokenId });
     }
