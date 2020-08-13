@@ -221,7 +221,7 @@ public class NonFungibleToken : SmartContract
     private string IndexOfOwnerByTokenKey(Address owner, ulong tokenId) => $"IndexOfOwnerByToken:{owner}:{tokenId}";
     private ulong GetIndexOfOwnerByToken(Address owner, ulong tokenId) => this.PersistentState.GetUInt64(IndexOfOwnerByTokenKey(owner, tokenId));
     private void SetIndexOfOwnerByToken(Address owner, ulong tokenId, ulong index) => this.PersistentState.SetUInt64(IndexOfOwnerByTokenKey(owner, tokenId), index);
-    private void ClearIndexOfOwnerByToken(Address owner, ulong tokenId) => this.PersistentState.Clear(IndexOfOwnerByTokenKey(owner, tokenId), index);
+    private void ClearIndexOfOwnerByToken(Address owner, ulong tokenId) => this.PersistentState.Clear(IndexOfOwnerByTokenKey(owner, tokenId));
     public ulong TotalSupply
     {
         get => this.PersistentState.GetUInt64(nameof(TotalSupply));
@@ -256,7 +256,7 @@ public class NonFungibleToken : SmartContract
     public ulong TokenOfOwnerByIndex(Address owner, ulong index)
     {
         Assert(index < GetOwnerToNFTokenCount(owner), "The index is invalid.");
-        
+
         return GetTokenOfOwnerByIndex(owner, index);
     }
 
@@ -462,7 +462,7 @@ public class NonFungibleToken : SmartContract
         SetIdToOwner(tokenId, to);
         ulong currentTokenAmount = GetOwnerToNFTokenCount(to);
         SetOwnerToNFTokenCount(to, checked(currentTokenAmount + 1));
-        
+
         var index = currentTokenAmount;
         SetIndexOfOwnerByToken(to, tokenId, index);
         SetTokenOfOwnerByIndex(to, index, tokenId);
