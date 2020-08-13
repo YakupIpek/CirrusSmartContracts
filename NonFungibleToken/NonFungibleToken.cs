@@ -463,6 +463,10 @@ public class NonFungibleToken : SmartContract
         SetIdToOwner(tokenId, to);
         ulong currentTokenAmount = GetOwnerToNFTokenCount(to);
         SetOwnerToNFTokenCount(to, checked(currentTokenAmount + 1));
+        
+        var index = currentTokenAmount;
+        SetIndexOfOwnerByToken(to, tokenId, index);
+        SetTokenOfOwnerByIndex(to, index, tokenId);
     }
 
     /// <summary>
@@ -626,6 +630,7 @@ public class NonFungibleToken : SmartContract
         ClearApproval(tokenId);
         RemoveNFToken(tokenOwner, tokenId);
 
+        //move last token to removed token and delete last token info
         var index = GetIndexByToken(tokenId);
         var lastTokenIndex = checked(--TotalSupply);
         var lastToken = GetTokenByIndex(lastTokenIndex);
@@ -635,7 +640,7 @@ public class NonFungibleToken : SmartContract
 
         ClearTokenByIndex(lastTokenIndex);
         ClearIndexByToken(tokenId);
-        
+
         Log(new TransferLog { From = tokenOwner, To = Address.Zero, TokenId = tokenId });
     }
 }
