@@ -248,17 +248,16 @@ public class NonFungibleToken : SmartContract
 
     public ulong TokenByIndex(ulong index)
     {
-        Assert(index < TotalSupply, "The token is not found.");
+        Assert(index < TotalSupply, "The index is invalid.");
+
         return GetTokenByIndex(index);
     }
 
     public ulong TokenOfOwnerByIndex(Address owner, ulong index)
     {
-        var token = GetTokenOfOwnerByIndex(owner, index);
-
-        Assert(index < GetOwnerToNFTokenCount(owner), "The token is not found.");
-
-        return token;
+        Assert(index < GetOwnerToNFTokenCount(owner), "The index is invalid.");
+        
+        return GetTokenOfOwnerByIndex(owner, index);
     }
 
     /// <summary>
