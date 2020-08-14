@@ -127,7 +127,7 @@ public class NonFungibleTokenTests
 
         var nonFungibleToken = this.CreateNonFungibleToken();
 
-        var result = nonFungibleToken.SupportsInterface(5);
+        var result = nonFungibleToken.SupportsInterface(6);
 
         Assert.False(result);
     }

@@ -239,7 +239,7 @@ public class NonFungibleToken : SmartContract
         this.SetSupportedInterfaces((uint)0x00000002, true); // (ERC721) - INonFungibleToken,
         this.SetSupportedInterfaces((uint)0x00000003, false); // (ERC721) - INonFungibleTokenReceiver
         this.SetSupportedInterfaces((uint)0x00000004, true); // (ERC721) - INonFungibleTokenMetadata
-        this.SetSupportedInterfaces((uint)0x00000005, true); // ERC721Enumerable
+        this.SetSupportedInterfaces((uint)0x00000005, true); // (ERC721) - IERC721Enumerable
 
         this.Name = name;
         this.Symbol = symbol;
@@ -432,11 +432,12 @@ public class NonFungibleToken : SmartContract
     private void RemoveNFToken(Address from, ulong tokenId)
     {
         Assert(GetIdToOwner(tokenId) == from);
-        SetOwnerToNFTokenCount(from, checked(GetOwnerToNFTokenCount(from) - 1));
+        var tokenCount = GetOwnerToNFTokenCount(from);
+        SetOwnerToNFTokenCount(from, checked(tokenCount - 1));
         this.PersistentState.Clear(GetIdToOwnerKey(tokenId));
 
         ulong index = GetIndexOfOwnerByToken(from, tokenId);
-        ulong lastIndex = checked(GetOwnerToNFTokenCount(from) - 1);
+        ulong lastIndex = tokenCount;
 
         if (index != lastIndex)
         {
