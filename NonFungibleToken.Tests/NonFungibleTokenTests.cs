@@ -43,7 +43,7 @@ public class NonFungibleTokenTests
         Assert.True(this.persistentState.GetBool("SupportedInterface:2"));
         Assert.False(this.persistentState.GetBool("SupportedInterface:3"));
         Assert.True(this.persistentState.GetBool("SupportedInterface:4"));
-
+        Assert.True(this.persistentState.GetBool("SupportedInterface:5"));
         Assert.Equal(this.name, nonFungibleToken.Name);
         Assert.Equal(this.symbol, nonFungibleToken.Symbol);
         Assert.Equal(owner, nonFungibleToken.Owner);
