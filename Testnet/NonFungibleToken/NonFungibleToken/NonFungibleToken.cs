@@ -60,90 +60,63 @@ public class NonFungibleToken : SmartContract
     /// </summary>
     /// <param name="interfaceId">The interface id.</param>
     /// <param name="value">A value indicating if the interface id is supported.</param>
-    private void SetSupportedInterfaces(uint interfaceId, bool value)
-    {
-        this.PersistentState.SetBool($"SupportedInterface:{interfaceId}", value);
-    }
+    private void SetSupportedInterfaces(uint interfaceId, bool value) => this.PersistentState.SetBool($"SupportedInterface:{interfaceId}", value);
 
     /// <summary>
     /// Gets the key to the persistent state for the owner by NFT ID.
     /// </summary>
     /// <param name="id">The NFT ID.</param>
     /// <returns>The persistent storage key to get or set the NFT owner.</returns>
-    private string GetIdToOwnerKey(ulong id)
-    {
-        return $"IdToOwner:{id}";
-    }
+    private string GetIdToOwnerKey(ulong id) => $"IdToOwner:{id}";
 
     ///<summary>
     /// Gets the address of the owner of the NFT ID. 
     ///</summary>
     /// <param name="id">The ID of the NFT</param>
     ///<returns>The owner address.</returns>
-    private Address GetIdToOwner(ulong id)
-    {
-        return this.PersistentState.GetAddress(GetIdToOwnerKey(id));
-    }
+    private Address GetIdToOwner(ulong id) => this.PersistentState.GetAddress(GetIdToOwnerKey(id));
 
     /// <summary>
     /// Sets the owner to the NFT ID.
     /// </summary>
     /// <param name="id">The ID of the NFT</param>
     /// <param name="value">The address of the owner.</param>
-    private void SetIdToOwner(ulong id, Address value)
-    {
-        this.PersistentState.SetAddress(GetIdToOwnerKey(id), value);
-    }
+    private void SetIdToOwner(ulong id, Address value) => this.PersistentState.SetAddress(GetIdToOwnerKey(id), value);
 
     /// <summary>
     /// Gets the key to the persistent state for the approval address by NFT ID.
     /// </summary>
     /// <param name="id">The NFT ID.</param>
     /// <returns>The persistent storage key to get or set the NFT approval.</returns>
-    private string GetIdToApprovalKey(ulong id)
-    {
-        return $"IdToApproval:{id}";
-    }
+    private string GetIdToApprovalKey(ulong id) => $"IdToApproval:{id}";
 
     /// <summary>
     /// Getting from NFT ID the approval address.
     /// </summary>
     /// <param name="id">The ID of the NFT</param>
     /// <returns>Address of the approval.</returns>
-    private Address GetIdToApproval(ulong id)
-    {
-        return this.PersistentState.GetAddress(GetIdToApprovalKey(id));
-    }
+    private Address GetIdToApproval(ulong id) => this.PersistentState.GetAddress(GetIdToApprovalKey(id));
 
     /// <summary>
     /// Setting to NFT ID to approval address.
     /// </summary>
     /// <param name="id">The ID of the NFT</param>
     /// <param name="value">The address of the approval.</param>
-    private void SetIdToApproval(ulong id, Address value)
-    {
-        this.PersistentState.SetAddress(GetIdToApprovalKey(id), value);
-    }
+    private void SetIdToApproval(ulong id, Address value) => this.PersistentState.SetAddress(GetIdToApprovalKey(id), value);
 
     /// <summary>
     /// Gets the amount of non fungible tokens the owner has.
     /// </summary>
     /// <param name="address">The address of the owner.</param>
     /// <returns>The amount of non fungible tokens.</returns>
-    private ulong GetOwnerToNFTokenCount(Address address)
-    {
-        return this.PersistentState.GetUInt64($"OwnerToNFTokenCount:{address}");
-    }
+    private ulong GetOwnerToNFTokenCount(Address address) => this.PersistentState.GetUInt64($"OwnerToNFTokenCount:{address}");
 
     /// <summary>
     /// Sets the owner count of this non fungible tokens.
     /// </summary>
     /// <param name="address">The address of the owner.</param>
     /// <param name="value">The amount of tokens.</param>
-    private void SetOwnerToNFTokenCount(Address address, ulong value)
-    {
-        this.PersistentState.SetUInt64($"OwnerToNFTokenCount:{address}", value);
-    }
+    private void SetOwnerToNFTokenCount(Address address, ulong value) => this.PersistentState.SetUInt64($"OwnerToNFTokenCount:{address}", value);
 
     /// <summary>
     /// Gets the permission value of the operator authorization to perform actions on behalf of the owner.
@@ -151,10 +124,7 @@ public class NonFungibleToken : SmartContract
     /// <param name="owner">The owner address of the NFT.</param>
     /// <param name="operatorAddress">>Address of the authorized operators</param>
     /// <returns>A value indicating if the operator has permissions to act on behalf of the owner.</returns>
-    private bool GetOwnerToOperator(Address owner, Address operatorAddress)
-    {
-        return this.PersistentState.GetBool($"OwnerToOperator:{owner}:{operatorAddress}");
-    }
+    private bool GetOwnerToOperator(Address owner, Address operatorAddress) => this.PersistentState.GetBool($"OwnerToOperator:{owner}:{operatorAddress}");
 
     /// <summary>
     /// Sets the owner to operator permission.
@@ -162,10 +132,7 @@ public class NonFungibleToken : SmartContract
     /// <param name="owner">The owner address of the NFT.</param>
     /// <param name="operatorAddress">>Address to add to the set of authorized operators.</param>
     /// <param name="value">The permission value.</param>
-    private void SetOwnerToOperator(Address owner, Address operatorAddress, bool value)
-    {
-        this.PersistentState.SetBool($"OwnerToOperator:{owner}:{operatorAddress}", value);
-    }
+    private void SetOwnerToOperator(Address owner, Address operatorAddress, bool value) => this.PersistentState.SetBool($"OwnerToOperator:{owner}:{operatorAddress}", value);
 
     /// <summary>
     /// Owner of the contract is responsible to for minting/burning 
