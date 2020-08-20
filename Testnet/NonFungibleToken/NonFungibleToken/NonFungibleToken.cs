@@ -163,9 +163,9 @@ public class NonFungibleToken : SmartContract
 
     private string GetTokenByIndexKey(ulong index) => $"TokenByIndex:{index}";
 
-    public ulong GetTokenByIndex(ulong index) => this.PersistentState.GetUInt64(GetTokenByIndexKey(index));
+    private ulong GetTokenByIndex(ulong index) => this.PersistentState.GetUInt64(GetTokenByIndexKey(index));
 
-    public void SetTokenByIndex(ulong index, ulong token) => this.PersistentState.SetUInt64(GetTokenByIndexKey(index), token);
+    private void SetTokenByIndex(ulong index, ulong token) => this.PersistentState.SetUInt64(GetTokenByIndexKey(index), token);
 
     private void ClearTokenByIndex(ulong index) => this.PersistentState.Clear(GetTokenByIndexKey(index));
 

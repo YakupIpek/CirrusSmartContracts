@@ -93,6 +93,55 @@ public class NonFungibleTokenTests
     }
 
     [Fact]
+    public void TokenByIndex_TokenNotFound_ThrowsAssertException()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+        this.persistentState.SetUInt64("TotalSupply", 5);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.TokenByIndex(5));
+    }
+
+    [Fact]
+    public void TokenByIndex_TokenFound_ReturnsTokenId()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+        this.persistentState.SetUInt64("TotalSupply", 5);
+        this.persistentState.SetUInt64("TokenByIndex:4", 4);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Equal(4ul, nonFungibleToken.TokenByIndex(4));
+    }
+
+    [Fact]
+    public void TokenOfOwnerByIndex_TokenNotFound_ThrowsAssertException()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+        this.persistentState.SetUInt64($"OwnerToNFTokenCount:{owner}", 5);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.TokenOfOwnerByIndex(owner, 5));
+    }
+
+    [Fact]
+    public void TokenOfOwnerByIndex_TokenFound_ReturnsTokenId()
+    {
+        var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
+        this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
+        this.persistentState.SetUInt64($"OwnerToNFTokenCount:{owner}", 4);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Equal(4ul, nonFungibleToken.TokenOfOwnerByIndex(owner, 4));
+    }
+
+    [Fact]
     public void SupportsInterface_InterfaceSupported_ReturnsTrue()
     {
         var sender = "0x0000000000000000000000000000000000000002".HexToAddress();
