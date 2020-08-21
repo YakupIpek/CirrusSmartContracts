@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using DividendTokenContract.Tests;
 using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
@@ -1173,6 +1174,66 @@ public class NonFungibleTokenTests
         var nonFungibleToken = this.CreateNonFungibleToken();
 
         Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.SafeTransferFrom(ownerAddress, Address.Zero, 1, new byte[1] { 0xff }));
+    }
+
+    [Fact]
+    public void Mint_CalledByNonOwner_ThrowsException()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        var userAddress = "0x0000000000000000000000000000000000000007".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(userAddress);
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.Mint(userAddress, 0));
+    }
+
+    [Fact]
+    public void Mint_MintingAlreadyExistingToken_ThrowsException()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        var userAddress = "0x0000000000000000000000000000000000000007".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        this.persistentState.SetAddress("IdToOwner:0", ownerAddress);
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.Mint(userAddress, 0));
+    }
+
+    [Fact]
+    public void Mint_ToAdressZero_ThrowsException()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.Mint(Address.Zero, 0));
+    }
+
+    [Fact]
+    public void Mint_MintingNewToken_Success()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        var targetAddress = "0x0000000000000000000000000000000000000007".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        nonFungibleToken.Mint(targetAddress, 1);
+
+        Assert.Equal(targetAddress, this.persistentState.GetAddress("IdToOwner:1"));
+        Assert.Equal(1ul, this.persistentState.GetUInt64($"OwnerToNFTokenCount:{targetAddress}"));
+        Assert.True(this.persistentState.ContainsKey("IndexByToken:1"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64("IndexByToken:1"));
+        Assert.Equal(1ul, this.persistentState.GetUInt64($"TokenOfOwnerByIndex:{targetAddress}:0"));
+        Assert.True(this.persistentState.ContainsKey($"IndexOfOwnerByToken:{targetAddress}:1"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64($"IndexOfOwnerByToken:{targetAddress}:1"));
+        Assert.Equal(1ul, this.persistentState.GetUInt64("TokenByIndex:0"));
+        Assert.Equal(1ul, this.persistentState.GetUInt64("TotalSupply"));
+
+        this.contractLoggerMock.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new NonFungibleToken.TransferLog { From = Address.Zero, To = targetAddress, TokenId = 1 }));
     }
 
     private NonFungibleToken CreateNonFungibleToken()

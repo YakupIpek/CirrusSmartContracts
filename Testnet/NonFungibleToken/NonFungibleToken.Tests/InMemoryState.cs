@@ -2,6 +2,7 @@
 using Stratis.SmartContracts;
 using System;
 using System.Collections.Generic;
+using System.Security.Permissions;
 
 namespace DividendTokenContract.Tests
 {
@@ -68,5 +69,7 @@ namespace DividendTokenContract.Tests
         public void SetUInt32(string key, uint value) => this.storage.AddOrReplace(key, value);
 
         public void SetUInt64(string key, ulong value) => this.storage.AddOrReplace(key, value);
+
+        public bool ContainsKey(string key) => storage.ContainsKey(key);
     }
 }
