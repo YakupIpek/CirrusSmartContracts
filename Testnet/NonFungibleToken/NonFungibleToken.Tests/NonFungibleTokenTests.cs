@@ -136,10 +136,10 @@ public class NonFungibleTokenTests
         var owner = "0x0000000000000000000000000000000000000002".HexToAddress();
         this.smartContractStateMock.SetupGet(m => m.Message).Returns(new Message(this.contractAddress, owner, 0));
         this.persistentState.SetUInt64($"OwnerToNFTokenCount:{owner}", 4);
-
+        this.persistentState.SetUInt64($"TokenOfOwnerByIndex:{owner}:1", 4);
         var nonFungibleToken = this.CreateNonFungibleToken();
 
-        Assert.Equal(4ul, nonFungibleToken.TokenOfOwnerByIndex(owner, 4));
+        Assert.Equal(1ul, nonFungibleToken.TokenOfOwnerByIndex(owner, 4));
     }
 
     [Fact]
@@ -1234,6 +1234,92 @@ public class NonFungibleTokenTests
         Assert.Equal(1ul, this.persistentState.GetUInt64("TotalSupply"));
 
         this.contractLoggerMock.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new NonFungibleToken.TransferLog { From = Address.Zero, To = targetAddress, TokenId = 1 }));
+    }
+
+    [Fact]
+    public void Burn_NoneExistingToken_ThrowsException()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.Burn(0));
+    }
+
+    [Fact]
+    public void Burn_BurningNotOwnedToken_ThrowsException()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        var anotherTokenOwner = "0x0000000000000000000000000000000000000007".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        this.persistentState.SetAddress("IdToOwner:0", anotherTokenOwner);
+
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        Assert.Throws<SmartContractAssertException>(() => nonFungibleToken.Burn(0));
+    }
+
+    [Fact]
+    public void Burn_BurningAToken_Success()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        this.persistentState.SetAddress("IdToOwner:1", ownerAddress);
+        this.persistentState.SetUInt64($"OwnerToNFTokenCount:{ownerAddress}", 1);
+        this.persistentState.SetUInt64("IndexByToken:1", 0);
+        this.persistentState.SetUInt64("TokenByIndex:0", 1);
+        this.persistentState.SetUInt64($"IndexOfOwnerByToken:{ownerAddress}:1", 0);
+        this.persistentState.SetUInt64("TotalSupply", 1);
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        nonFungibleToken.Burn(1);
+
+        Assert.False(this.persistentState.ContainsKey("IdToOwner:1"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64($"OwnerToNFTokenCount:{ownerAddress}"));
+        Assert.False(this.persistentState.ContainsKey("IndexByToken:1"));
+        Assert.False(this.persistentState.ContainsKey("TokenByIndex:0"));
+        Assert.False(this.persistentState.ContainsKey($"IndexOfOwnerByToken:{ownerAddress}:1"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64("TotalSupply"));
+
+        this.contractLoggerMock.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new NonFungibleToken.TransferLog { From = ownerAddress, To = Address.Zero, TokenId = 1 }));
+    }
+
+    [Fact]
+    public void Burn_BurningAToken_WhenTotalSupplyIsAtLeast2_Success()
+    {
+        var ownerAddress = "0x0000000000000000000000000000000000000006".HexToAddress();
+        var anotherOwnerAddress = "0x0000000000000000000000000000000000000007".HexToAddress();
+        this.smartContractStateMock.Setup(m => m.Message.Sender).Returns(ownerAddress);
+        this.persistentState.SetAddress("IdToOwner:1", ownerAddress);
+        this.persistentState.SetUInt64($"OwnerToNFTokenCount:{ownerAddress}", 1);
+        this.persistentState.SetUInt64("IndexByToken:1", 0);
+        this.persistentState.SetUInt64("TokenByIndex:0", 1);
+        this.persistentState.SetUInt64($"IndexOfOwnerByToken:{ownerAddress}:1", 0);
+
+        this.persistentState.SetAddress("IdToOwner:2", anotherOwnerAddress);
+        this.persistentState.SetUInt64($"OwnerToNFTokenCount:{anotherOwnerAddress}", 1);
+        this.persistentState.SetUInt64("IndexByToken:2", 1);
+        this.persistentState.SetUInt64("TokenByIndex:1", 2);
+        this.persistentState.SetUInt64($"IndexOfOwnerByToken:{anotherOwnerAddress}:1", 0);
+
+        this.persistentState.SetUInt64("TotalSupply", 2);
+        var nonFungibleToken = this.CreateNonFungibleToken();
+
+        nonFungibleToken.Burn(1);
+
+        Assert.False(this.persistentState.ContainsKey("IdToOwner:1"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64($"OwnerToNFTokenCount:{ownerAddress}"));
+        Assert.False(this.persistentState.ContainsKey("IndexByToken:1"));
+        Assert.False(this.persistentState.ContainsKey($"IndexOfOwnerByToken:{ownerAddress}:1"));
+
+        Assert.Equal(2ul, this.persistentState.GetUInt64("TokenByIndex:0"));
+        Assert.Equal(anotherOwnerAddress, this.persistentState.GetAddress("IdToOwner:2"));
+        Assert.Equal(1ul, this.persistentState.GetUInt64($"OwnerToNFTokenCount:{anotherOwnerAddress}"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64("IndexByToken:2"));
+        Assert.Equal(0ul, this.persistentState.GetUInt64($"IndexOfOwnerByToken:{anotherOwnerAddress}:2"));
+
+        Assert.Equal(1ul, this.persistentState.GetUInt64("TotalSupply"));
+        this.contractLoggerMock.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new NonFungibleToken.TransferLog { From = ownerAddress, To = Address.Zero, TokenId = 1 }));
     }
 
     private NonFungibleToken CreateNonFungibleToken()

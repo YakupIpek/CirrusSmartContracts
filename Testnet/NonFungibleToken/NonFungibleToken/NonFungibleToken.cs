@@ -282,11 +282,11 @@ public class NonFungibleToken : SmartContract
     public void TransferFrom(Address from, Address to, ulong tokenId)
     {
         CanTransfer(tokenId);
-        ValidNFToken(tokenId);
 
         Address tokenOwner = GetIdToOwner(tokenId);
+        
+        EnsureAddressIsNotEmpty(to);
         Assert(tokenOwner == from);
-        Assert(to != Address.Zero);
 
         TransferInternal(to, tokenId);
     }
@@ -333,7 +333,7 @@ public class NonFungibleToken : SmartContract
     /// <returns>Balance of owner.</returns>
     public ulong BalanceOf(Address owner)
     {
-        Assert(owner != Address.Zero);
+        EnsureAddressIsNotEmpty(owner);
         return GetOwnerToNFTokenCount(owner);
     }
 
@@ -345,7 +345,7 @@ public class NonFungibleToken : SmartContract
     public Address OwnerOf(ulong tokenId)
     {
         Address owner = GetIdToOwner(tokenId);
-        Assert(owner != Address.Zero);
+        EnsureAddressIsNotEmpty(owner);
         return owner;
     }
 
@@ -450,7 +450,7 @@ public class NonFungibleToken : SmartContract
 
         Address tokenOwner = GetIdToOwner(tokenId);
         Assert(tokenOwner == from);
-        Assert(to != Address.Zero);
+        EnsureAddressIsNotEmpty(to);
 
         TransferInternal(to, tokenId);
 
@@ -494,7 +494,7 @@ public class NonFungibleToken : SmartContract
     /// </summary>
     /// <param name="owner">The owner address.</param>
     /// <param name="operatorAddress">The approved address.</param>
-    /// <param name="tokenId">The NFT ID.</param>
+    /// <param name="tokenId">The NFT ID.</ >
     private void LogApproval(Address owner, Address approved, ulong tokenId)
     {
         Log(new ApprovalLog() { Owner = owner, Approved = approved, TokenId = tokenId });
@@ -535,14 +535,15 @@ public class NonFungibleToken : SmartContract
           || GetOwnerToOperator(tokenOwner, Message.Sender)
         );
     }
-
+    
     /// <summary>
     /// Guarantees that tokenId is a valid Token.
     /// </summary>
     /// <param name="tokenId">ID of the NFT to validate.</param>
     private void ValidNFToken(ulong tokenId)
     {
-        Assert(GetIdToOwner(tokenId) != Address.Zero);
+        Address tokenOwner = GetIdToOwner(tokenId);
+        EnsureAddressIsNotEmpty(tokenOwner);
     }
 
     /// <summary>
@@ -589,8 +590,9 @@ public class NonFungibleToken : SmartContract
 
     public void Burn(ulong tokenId)
     {
-        ValidNFToken(tokenId);
         Address tokenOwner = GetIdToOwner(tokenId);
+        
+        EnsureAddressIsNotEmpty(tokenOwner);
 
         Assert(tokenOwner == Message.Sender, "Only token owner can burn the token.");
 
@@ -609,5 +611,10 @@ public class NonFungibleToken : SmartContract
         ClearIndexByToken(tokenId);
 
         Log(new TransferLog { From = tokenOwner, To = Address.Zero, TokenId = tokenId });
+    }
+
+    public void EnsureAddressIsNotEmpty(Address address)
+    {
+        Assert(address != Address.Zero,"The address can not be zero.");
     }
 }
