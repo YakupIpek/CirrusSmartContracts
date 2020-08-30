@@ -284,7 +284,7 @@ public class NonFungibleToken : SmartContract
         CanTransfer(tokenId);
 
         Address tokenOwner = GetIdToOwner(tokenId);
-        
+        EnsureAddressIsNotEmpty(tokenOwner);
         EnsureAddressIsNotEmpty(to);
         Assert(tokenOwner == from);
 
@@ -404,7 +404,7 @@ public class NonFungibleToken : SmartContract
         this.PersistentState.Clear(GetIdToOwnerKey(tokenId));
 
         ulong index = GetIndexOfOwnerByToken(from, tokenId);
-        ulong lastIndex = tokenCount;
+        ulong lastIndex = tokenCount - 1;
 
         if (index != lastIndex)
         {
@@ -535,7 +535,7 @@ public class NonFungibleToken : SmartContract
           || GetOwnerToOperator(tokenOwner, Message.Sender)
         );
     }
-    
+
     /// <summary>
     /// Guarantees that tokenId is a valid Token.
     /// </summary>
@@ -591,7 +591,7 @@ public class NonFungibleToken : SmartContract
     public void Burn(ulong tokenId)
     {
         Address tokenOwner = GetIdToOwner(tokenId);
-        
+
         EnsureAddressIsNotEmpty(tokenOwner);
 
         Assert(tokenOwner == Message.Sender, "Only token owner can burn the token.");
@@ -615,6 +615,6 @@ public class NonFungibleToken : SmartContract
 
     public void EnsureAddressIsNotEmpty(Address address)
     {
-        Assert(address != Address.Zero,"The address can not be zero.");
+        Assert(address != Address.Zero, "The address can not be zero.");
     }
 }
