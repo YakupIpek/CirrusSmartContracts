@@ -1,8 +1,4 @@
 ﻿using Stratis.SmartContracts;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
-
 /// <summary>
 /// A non fungible token contract.
 /// </summary>

@@ -48,6 +48,7 @@ public class NonFungibleTokenTests
         Assert.Equal(this.name, nonFungibleToken.Name);
         Assert.Equal(this.symbol, nonFungibleToken.Symbol);
         Assert.Equal(owner, nonFungibleToken.Owner);
+        Assert.Equal(1ul, this.persistentState.GetUInt64("NextTokenId"));
     }
 
     [Fact]
