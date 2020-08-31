@@ -1,5 +1,7 @@
 ﻿using Stratis.SmartContracts;
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 
 /// <summary>
 /// A non fungible token contract.
@@ -161,6 +163,15 @@ public class NonFungibleToken : SmartContract
         private set => this.PersistentState.SetString(nameof(Symbol), value);
     }
 
+    /// <summary>
+    /// The next token index which is going to be minted
+    /// </summary>
+    private ulong NextTokenId
+    {
+        get => this.PersistentState.GetUInt64(nameof(NextTokenId));
+        set => this.PersistentState.SetUInt64(nameof(NextTokenId), value);
+    }
+
     private string GetTokenByIndexKey(ulong index) => $"TokenByIndex:{index}";
 
     private ulong GetTokenByIndex(ulong index) => this.PersistentState.GetUInt64(GetTokenByIndexKey(index));
@@ -211,6 +222,7 @@ public class NonFungibleToken : SmartContract
         this.Name = name;
         this.Symbol = symbol;
         this.Owner = Message.Sender;
+        this.NextTokenId = 1;
     }
 
     public ulong TokenByIndex(ulong index)
@@ -566,26 +578,37 @@ public class NonFungibleToken : SmartContract
     }
 
     /// <summary>
-    /// Mints a new token
+    /// Mints new tokens
     /// </summary>
-    /// <param name="to">o The address that will own the minted NFT</param>
-    /// <param name="tokenId">The token id</param>
-    public void Mint(Address to, ulong tokenId)
+    /// <param name="address">The address that will own the minted NFT</param>
+    /// <param name="amount">Number of tokens will be created</param>
+    public void MintAll(Address address, ulong amount)
     {
         EnsureOwnerOnly();
+        EnsureAddressIsNotEmpty(address);
+        Assert(amount > 0, "the amount should be higher than zero");
 
-        Assert(to != Address.Zero, $"The {nameof(to)} parameter can not be default(zero) address.");
-        Assert(GetIdToOwner(tokenId) == Address.Zero, "The token is already exist.");
-
-        AddNFToken(to, tokenId);
         var index = TotalSupply;
+        var lastIndex = checked(index + amount);
+        var tokenId = NextTokenId;
 
-        SetTokenByIndex(index, tokenId);
-        SetIndexByToken(tokenId, index);
+        while (index < lastIndex)
+        {
+            AddNFToken(address, tokenId);
+            SetTokenByIndex(index, tokenId);
+            SetIndexByToken(tokenId, index);
 
-        TotalSupply = checked(index + 1);
+            Log(new TransferLog { From = Address.Zero, To = address, TokenId = tokenId });
+            
+            checked
+            {
+                index++;
+                tokenId++;
+            }
+        }
 
-        Log(new TransferLog { From = Address.Zero, To = to, TokenId = tokenId });
+        TotalSupply = checked(TotalSupply + amount);
+        NextTokenId = tokenId;
     }
 
     public void Burn(ulong tokenId)
